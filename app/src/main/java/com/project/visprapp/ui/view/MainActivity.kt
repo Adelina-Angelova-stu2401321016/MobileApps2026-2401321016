@@ -11,11 +11,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.project.visprapp.databinding.ActivityMainBinding
 import com.project.visprapp.ui.viewmodel.MainViewModel
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-/**
- * View layer in MVVM: MainActivity observing StateFlow changes from MainViewModel.
- */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
@@ -40,11 +38,8 @@ class MainActivity : AppCompatActivity() {
     private fun observeViewModel() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.mainData.collect { data ->
-                    data?.let { (title, description) ->
-                        binding.tvTitle.text = title
-                        binding.tvDescription.text = description
-                    }
+                viewModel.emfProgress.collectLatest { progress ->
+                    binding.emfIndicator.progress = progress
                 }
             }
         }

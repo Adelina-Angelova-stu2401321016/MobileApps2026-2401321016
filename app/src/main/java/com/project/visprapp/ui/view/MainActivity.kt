@@ -31,15 +31,34 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-
+        setupClickListeners()
         observeViewModel()
     }
 
+    private fun setupClickListeners() {
+        binding.btnStart.setOnClickListener {
+            viewModel.startSession()
+        }
+
+        binding.btnEnd.setOnClickListener {
+            viewModel.endSession()
+        }
+    }
     private fun observeViewModel() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.emfProgress.collectLatest { progress ->
-                    binding.emfIndicator.progress = progress
+                launch {
+                    viewModel.emfProgress.collectLatest { progress ->
+                        binding.emfIndicator.progress = progress
+                    }
+                }
+                launch {
+                    viewModel.wordLog.collectLatest { logText ->
+                        binding.tvWordLog.text = logText
+                        binding.scrollView.post {
+                            binding.scrollView.fullScroll(android.view.View.FOCUS_DOWN)
+                        }
+                    }
                 }
             }
         }

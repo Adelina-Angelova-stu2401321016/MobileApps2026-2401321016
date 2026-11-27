@@ -12,11 +12,11 @@ import kotlin.math.sqrt
 
 class EmfRepository(context: Context){
 
-    private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-    private val magnetometer: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+    private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
+    private val magnetometer: Sensor? = sensorManager?.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
 
     fun getEmfFlow(): Flow<Float> = callbackFlow {
-        if (magnetometer == null) {
+        if (sensorManager == null || magnetometer == null) {
             close(IllegalStateException("Телефонът Ви няма магнотометър :("))
             return@callbackFlow
         }

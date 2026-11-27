@@ -67,6 +67,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _wordLog.value = logBuilder.toString()
     }
 
+    fun clearLog() {
+        logBuilder.clear()
+        _wordLog.value = "Session not started..."
+    }
+
     val emfProgress: StateFlow<Float> = repositoryEmf.getEmfFlow()
         .map { magnitude ->
             val minEmf = 30f

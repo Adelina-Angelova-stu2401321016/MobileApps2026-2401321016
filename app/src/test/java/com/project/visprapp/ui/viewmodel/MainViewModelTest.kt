@@ -1,30 +1,28 @@
 package com.project.visprapp.ui.viewmodel
 
-import com.project.visprapp.data.model.MainData
-import com.project.visprapp.data.repository.MainRepository
+import android.app.Application
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Test
 
 class MainViewModelTest {
 
-    private class FakeRepository : MainRepository {
-        override fun getMainData(): MainData {
-            return MainData(
-                title = "Test Title",
-                description = "Test Description",
-            )
-        }
+    @Test
+    fun initialWordLog_isDefault() {
+        val app = Application()
+        val viewModel = MainViewModel(app)
+
+        val result = viewModel.wordLog.value
+        assertNotNull(result)
+        assertEquals("Session not started...", result)
     }
 
     @Test
-    fun loadMainData_updatesStateFlow() {
-        val fakeRepository = FakeRepository()
-        val viewModel = MainViewModel(fakeRepository)
+    fun clearLog_resetsWordLog() {
+        val app = Application()
+        val viewModel = MainViewModel(app)
 
-        val result = viewModel.mainData.value
-        assertNotNull(result)
-        assertEquals("Test Title", result?.title)
-        assertEquals("Test Description", result?.description)
+        viewModel.clearLog()
+        assertEquals("Session not started...", viewModel.wordLog.value)
     }
 }

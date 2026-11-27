@@ -20,11 +20,11 @@ import kotlinx.coroutines.launch
 
 class CombinedSensRepository(context: Context, private val wbSize: Int) {
 
-    private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
     private val emfRepository = EmfRepository(context)
 
-    private val barometer: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE)
-    private val lightSensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
+    private val barometer: Sensor? = sensorManager?.getDefaultSensor(Sensor.TYPE_PRESSURE)
+    private val lightSensor: Sensor? = sensorManager?.getDefaultSensor(Sensor.TYPE_LIGHT)
 
     private fun normalize(value: Float, scale: Float): Float {
         val scaledValue = value * scale
@@ -67,11 +67,11 @@ class CombinedSensRepository(context: Context, private val wbSize: Int) {
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
         }
 
-        barometer?.let { sensorManager.registerListener(listener, it, SensorManager.SENSOR_DELAY_UI) }
-        lightSensor?.let { sensorManager.registerListener(listener, it, SensorManager.SENSOR_DELAY_UI) }
+        barometer?.let { sensorManager?.registerListener(listener, it, SensorManager.SENSOR_DELAY_UI) }
+        lightSensor?.let { sensorManager?.registerListener(listener, it, SensorManager.SENSOR_DELAY_UI) }
 
         awaitClose {
-            sensorManager.unregisterListener(listener)
+            sensorManager?.unregisterListener(listener)
         }
     }
 

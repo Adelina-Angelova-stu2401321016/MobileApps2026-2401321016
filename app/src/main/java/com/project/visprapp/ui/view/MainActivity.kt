@@ -4,6 +4,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -15,17 +16,26 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.project.visprapp.R
+import com.project.visprapp.data.local.Session
+import com.project.visprapp.data.local.SessionItem
+import com.project.visprapp.data.local.User
+import com.project.visprapp.data.repository.SessionRepository
 import com.project.visprapp.data.repository.UserRepository
 import com.project.visprapp.databinding.ActivityMainBinding
+import com.project.visprapp.ui.viewmodel.CapturedWord
 import com.project.visprapp.ui.viewmodel.MainViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var userRepository: UserRepository
+    private lateinit var sessionRepository: SessionRepository
+    private var activeUser: User? = null
     private val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,6 +46,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         userRepository = UserRepository(applicationContext)
+        sessionRepository = SessionRepository(applicationContext)
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -60,6 +71,9 @@ class MainActivity : AppCompatActivity() {
 
         binding.navigationView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
+                R.id.nav_home -> {
+                    // Already in MainActivity, do nothing
+                }
                 R.id.nav_login -> {
                     startActivity(Intent(this, LoginActivity::class.java))
                 }
@@ -68,17 +82,8 @@ class MainActivity : AppCompatActivity() {
                         userRepository.logout()
                     }
                 }
-                R.id.nav_clear_log -> {
-                    viewModel.clearLog()
-                }
-                R.id.nav_home -> {
-                    // Navigate to Home View
-                }
-                R.id.nav_settings -> {
-                    // Navigate to Settings View
-                }
-                R.id.nav_about -> {
-                    // Navigate to About View
+                R.id.nav_sessions -> {
+                    startActivity(Intent(this, SessionsActivity::class.java))
                 }
             }
             binding.drawerLayout.closeDrawer(GravityCompat.START)
@@ -113,6 +118,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 userRepository.activeUser.collectLatest { user ->
+                    activeUser = user
                     val menu = binding.navigationView.menu
                     if (user != null) {
                         tvUsername.text = user.username
@@ -143,6 +149,61 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnEnd.setOnClickListener {
             viewModel.endSession()
+            val currentUser = activeUser
+            if (currentUser != null) {
+                showSaveSessionDialog(currentUser)
+            }
+        }
+    }
+
+    private fun showSaveSessionDialog(user: User) {
+        val capturedWords = viewModel.capturedWords.value
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Save Session?")
+            .setMessage("Would you like to save this session with ${capturedWords.size} words to your profile (${user.username})?")
+            .setPositiveButton("Yes") { dialog, _ ->
+                saveSessionToDatabase(user, capturedWords)
+                dialog.dismiss()
+            }
+            .setNegativeButton("No") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    private fun saveSessionToDatabase(user: User, capturedWords: List<CapturedWord>) {
+        lifecycleScope.launch {
+            val newSessionId = UUID.randomUUID().toString()
+            val now = System.currentTimeMillis()
+
+            val session = Session(
+                sessionId = newSessionId,
+                userId = user.userId,
+                dtSaved = now,
+                notes = null
+            )
+
+            val sessionItems = capturedWords.map { word ->
+                SessionItem(
+                    wordId = UUID.randomUUID().toString(),
+                    sessionId = newSessionId,
+                    dtWord = word.timestamp,
+                    wordText = word.wordText,
+                    notes = null
+                )
+            }
+
+            sessionRepository.saveSession(session)
+            if (sessionItems.isNotEmpty()) {
+                sessionRepository.saveSessionItems(sessionItems)
+            }
+
+            Toast.makeText(
+                this@MainActivity,
+                "Session saved with ${sessionItems.size} words!",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 

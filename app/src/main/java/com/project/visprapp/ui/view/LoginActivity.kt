@@ -2,27 +2,22 @@ package com.project.visprapp.ui.view
 
 import android.accounts.AccountManager
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.common.api.ApiException
 import com.google.android.material.card.MaterialCardView
 import com.project.visprapp.data.local.User
 import com.project.visprapp.data.repository.UserRepository
 import com.project.visprapp.databinding.ActivityLoginBinding
 import kotlinx.coroutines.launch
-import java.util.UUID
 
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
     private lateinit var userRepository: UserRepository
-    private lateinit var googleSignInClient: GoogleSignInClient
 
     private var currentGoogleId: String = ""
     private var currentEmail: String = ""
@@ -31,12 +26,15 @@ class LoginActivity : AppCompatActivity() {
     private val accountPickerLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
+        Log.d("VisprAuth", "AccountPicker resultCode=${result.resultCode}")
         if (result.resultCode == RESULT_OK && result.data != null) {
             val accountName = result.data?.getStringExtra(AccountManager.KEY_ACCOUNT_NAME)
+            Log.d("VisprAuth", "Selected accountName='$accountName'")
             if (!accountName.isNullOrEmpty()) {
-                currentGoogleId = accountName
-                currentEmail = accountName
-                val defaultDisplayName = accountName.substringBefore("@").replaceFirstChar { it.uppercase() }
+                val cleanEmail = accountName.trim().lowercase()
+                currentGoogleId = cleanEmail
+                currentEmail = cleanEmail
+                val defaultDisplayName = cleanEmail.substringBefore("@").replaceFirstChar { it.uppercase() }
                 onGoogleAuthSuccess(currentGoogleId, currentEmail, defaultDisplayName)
             } else {
                 Toast.makeText(this, "No Google account selected", Toast.LENGTH_SHORT).show()
@@ -46,43 +44,12 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
-    private val googleSignInLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == RESULT_OK) {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-            try {
-                val account = task.getResult(ApiException::class.java)
-                if (account != null) {
-                    currentGoogleId = account.id ?: account.email ?: UUID.randomUUID().toString()
-                    currentEmail = account.email ?: ""
-                    val displayName = account.displayName ?: ""
-                    onGoogleAuthSuccess(currentGoogleId, currentEmail, displayName)
-                } else {
-                    launchSystemGoogleAccountPicker()
-                }
-            } catch (e: ApiException) {
-                // If Google Play Services returns OAuth error 12500 (unregistered app SHA-1), launch System Google Account Picker
-                launchSystemGoogleAccountPicker()
-            }
-        } else {
-            launchSystemGoogleAccountPicker()
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         userRepository = UserRepository(applicationContext)
-
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestEmail()
-            .requestProfile()
-            .build()
-
-        googleSignInClient = GoogleSignIn.getClient(this, gso)
 
         setupClickListeners()
     }
@@ -100,10 +67,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun performGoogleAuth() {
-        googleSignInClient.signOut().addOnCompleteListener {
-            val signInIntent = googleSignInClient.signInIntent
-            googleSignInLauncher.launch(signInIntent)
-        }
+        launchSystemGoogleAccountPicker()
     }
 
     private fun launchSystemGoogleAccountPicker() {
@@ -120,20 +84,42 @@ class LoginActivity : AppCompatActivity() {
             )
             accountPickerLauncher.launch(intent)
         } catch (e: Exception) {
+            Log.e("VisprAuth", "Error launching account picker", e)
             Toast.makeText(this, "No Google accounts available on this device", Toast.LENGTH_LONG).show()
         }
     }
 
     private fun onGoogleAuthSuccess(googleId: String, email: String, displayName: String) {
-        binding.layoutGoogleSignIn.visibility = View.GONE
-        binding.layoutProfileSetup.visibility = View.VISIBLE
+        val normalizedEmail = email.trim().lowercase()
+        currentEmail = normalizedEmail
+        currentGoogleId = normalizedEmail
 
-        binding.tvSignedInAs.text = "Signed in as: $email"
+        lifecycleScope.launch {
+            val allUsers = userRepository.getAllUsers()
+            Log.d("VisprAuth", "All users in DB count=${allUsers.size}: $allUsers")
+            val existingUser = userRepository.getUserByEmail(normalizedEmail)
+            Log.d("VisprAuth", "Searching email '$normalizedEmail', found: $existingUser")
 
-        val defaultUsername = displayName.ifEmpty {
-            email.substringBefore("@").replaceFirstChar { it.uppercase() }
+            if (existingUser != null) {
+                val updatedUser = existingUser.copy(
+                    lastLogin = System.currentTimeMillis(),
+                    isLoggedIn = true
+                )
+                userRepository.saveUser(updatedUser)
+                Toast.makeText(this@LoginActivity, "Welcome back, ${existingUser.username}!", Toast.LENGTH_SHORT).show()
+                finish()
+            } else {
+                binding.layoutGoogleSignIn.visibility = View.GONE
+                binding.layoutProfileSetup.visibility = View.VISIBLE
+
+                binding.tvSignedInAs.text = "Signed in as: $normalizedEmail"
+
+                val defaultUsername = displayName.ifEmpty {
+                    normalizedEmail.substringBefore("@").replaceFirstChar { it.uppercase() }
+                }
+                binding.etUsername.setText(defaultUsername)
+            }
         }
-        binding.etUsername.setText(defaultUsername)
     }
 
     private fun setupColorSelection() {
@@ -171,16 +157,34 @@ class LoginActivity : AppCompatActivity() {
         }
 
         lifecycleScope.launch {
-            val user = User(
-                userId = UUID.randomUUID().toString(),
-                googleId = currentGoogleId,
-                email = currentEmail,
-                dtCreated = System.currentTimeMillis(),
-                username = username,
-                avatarColor = selectedAvatarColor
-            )
+            val normalizedEmail = currentEmail.trim().lowercase()
+            val now = System.currentTimeMillis()
 
-            userRepository.saveUser(user)
+            val existingUser = userRepository.getUserByEmail(normalizedEmail)
+            Log.d("VisprAuth", "saveUserProfile: existingUser=$existingUser for '$normalizedEmail'")
+
+            val userToSave = if (existingUser != null) {
+                existingUser.copy(
+                    lastLogin = now,
+                    isLoggedIn = true,
+                    username = username,
+                    avatarColor = selectedAvatarColor
+                )
+            } else {
+                User(
+                    userId = normalizedEmail,
+                    googleId = normalizedEmail,
+                    email = normalizedEmail,
+                    dtCreated = now,
+                    lastLogin = now,
+                    isLoggedIn = true,
+                    username = username,
+                    avatarColor = selectedAvatarColor
+                )
+            }
+
+            userRepository.saveUser(userToSave)
+            Log.d("VisprAuth", "Saved user to DB: $userToSave")
             Toast.makeText(this@LoginActivity, "Profile saved!", Toast.LENGTH_SHORT).show()
             finish()
         }

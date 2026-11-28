@@ -10,6 +10,8 @@ data class User(
     val googleId: String,
     val email: String,
     val dtCreated: Long = System.currentTimeMillis(),
+    val lastLogin: Long = System.currentTimeMillis(),
+    val isLoggedIn: Boolean = true,
     val username: String,
     val avatarColor: String
 )

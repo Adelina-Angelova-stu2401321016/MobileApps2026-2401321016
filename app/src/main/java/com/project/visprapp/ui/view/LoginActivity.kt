@@ -59,6 +59,13 @@ class LoginActivity : AppCompatActivity() {
             performGoogleAuth()
         }
 
+        binding.btnTestUserSignIn.setOnClickListener {
+            lifecycleScope.launch {
+                userRepository.loginAsTestUser()
+                finish()
+            }
+        }
+
         setupColorSelection()
 
         binding.btnSaveProfile.setOnClickListener {
@@ -106,7 +113,6 @@ class LoginActivity : AppCompatActivity() {
                     isLoggedIn = true
                 )
                 userRepository.saveUser(updatedUser)
-                Toast.makeText(this@LoginActivity, "Welcome back, ${existingUser.username}!", Toast.LENGTH_SHORT).show()
                 finish()
             } else {
                 binding.layoutGoogleSignIn.visibility = View.GONE
@@ -185,7 +191,6 @@ class LoginActivity : AppCompatActivity() {
 
             userRepository.saveUser(userToSave)
             Log.d("VisprAuth", "Saved user to DB: $userToSave")
-            Toast.makeText(this@LoginActivity, "Profile saved!", Toast.LENGTH_SHORT).show()
             finish()
         }
     }

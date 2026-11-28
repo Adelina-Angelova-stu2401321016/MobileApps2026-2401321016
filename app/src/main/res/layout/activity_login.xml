@@ -66,6 +66,24 @@
                 app:iconPadding="12dp"
                 app:iconTint="@null" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTestUserSignIn"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="16dp"
+                android:backgroundTint="#2D2D35"
+                android:text="Sign in as Sadie (Test User)"
+                android:textColor="#00FFCC"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                app:cornerRadius="28dp"
+                app:icon="@drawable/ic_user"
+                app:iconGravity="textStart"
+                app:iconPadding="12dp"
+                app:iconTint="#00FFCC"
+                app:strokeColor="#00FFCC"
+                app:strokeWidth="1dp" />
+
         </LinearLayout>
 
         <!-- Step 2: Profile Setup Container -->

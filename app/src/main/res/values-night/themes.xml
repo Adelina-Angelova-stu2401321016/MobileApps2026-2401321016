@@ -1,7 +1,15 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.VisprApp" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <!-- Dark Theme Colors (Default) -->
+        <item name="colorPrimary">@color/dark_accent</item>
+        <item name="colorOnPrimary">#121215</item>
+        <item name="android:colorBackground">@color/dark_background</item>
+        <item name="colorSurface">@color/dark_surface</item>
+        <item name="colorOnSurface">@color/dark_text_primary</item>
+        <item name="colorOnSurfaceVariant">@color/dark_text_secondary</item>
+        <item name="colorOutline">@color/dark_card_stroke</item>
     </style>
+
+    <style name="Theme.VisprApp" parent="Base.Theme.VisprApp" />
 </resources>

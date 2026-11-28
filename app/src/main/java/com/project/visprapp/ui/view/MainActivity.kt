@@ -26,6 +26,7 @@ import com.project.visprapp.data.repository.UserRepository
 import com.project.visprapp.databinding.ActivityMainBinding
 import com.project.visprapp.ui.viewmodel.CapturedWord
 import com.project.visprapp.ui.viewmodel.MainViewModel
+import com.project.visprapp.utils.ThemeManager
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -39,6 +40,7 @@ class MainActivity : AppCompatActivity() {
     private val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeManager(this).applySavedTheme()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
@@ -84,6 +86,9 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.nav_sessions -> {
                     startActivity(Intent(this, SessionsActivity::class.java))
+                }
+                R.id.nav_settings -> {
+                    startActivity(Intent(this, SettingsActivity::class.java))
                 }
             }
             binding.drawerLayout.closeDrawer(GravityCompat.START)

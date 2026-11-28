@@ -21,6 +21,9 @@ interface UserDao {
     @Query("SELECT * FROM users WHERE LOWER(TRIM(email)) = LOWER(TRIM(:email)) OR LOWER(TRIM(userId)) = LOWER(TRIM(:email)) OR LOWER(TRIM(googleId)) = LOWER(TRIM(:email)) OR (email != '' AND LOWER(TRIM(email)) LIKE '%' || LOWER(TRIM(:email)) || '%') LIMIT 1")
     suspend fun getUserByEmail(email: String): User?
 
+    @Query("SELECT COUNT(*) FROM users")
+    suspend fun getUserCount(): Int
+
     @Query("SELECT * FROM users")
     suspend fun getAllUsers(): List<User>
 

@@ -63,6 +63,9 @@ class SessionsActivity : AppCompatActivity() {
                 R.id.nav_sessions -> {
                     // Already in SessionsActivity, do nothing
                 }
+                R.id.nav_settings -> {
+                    startActivity(Intent(this, SettingsActivity::class.java))
+                }
                 R.id.nav_login -> {
                     startActivity(Intent(this, LoginActivity::class.java))
                 }

@@ -12,14 +12,19 @@ class UserRepository(context: Context) {
     val activeUser: Flow<User?> = userDao.getActiveUser()
 
     suspend fun saveUser(user: User) {
+        userDao.logoutAllUsers()
         userDao.insertUser(user)
     }
 
-    suspend fun getUserByGoogleId(googleId: String): User? {
-        return userDao.getUserByGoogleId(googleId)
+    suspend fun getUserByEmail(email: String): User? {
+        return userDao.getUserByEmail(email.trim().lowercase())
+    }
+
+    suspend fun getAllUsers(): List<User> {
+        return userDao.getAllUsers()
     }
 
     suspend fun logout() {
-        userDao.deleteAllUsers()
+        userDao.logoutAllUsers()
     }
 }

@@ -2,4 +2,20 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Dark Theme Colors (Default) -->
+    <color name="dark_background">#121215</color>
+    <color name="dark_surface">#1A1A1E</color>
+    <color name="dark_text_primary">#FFFFFF</color>
+    <color name="dark_text_secondary">#AAAAAA</color>
+    <color name="dark_accent">#00FFCC</color>
+    <color name="dark_card_stroke">#333333</color>
+
+    <!-- Light Theme Colors -->
+    <color name="light_background">#F5F5F7</color>
+    <color name="light_surface">#FFFFFF</color>
+    <color name="light_text_primary">#1C1C1E</color>
+    <color name="light_text_secondary">#636366</color>
+    <color name="light_accent">#008080</color>
+    <color name="light_card_stroke">#E0E0E0</color>
 </resources>
